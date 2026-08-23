@@ -48,7 +48,7 @@ function configFor(slug:DailyGameSlug, level:number, r:()=>number):Record<string
     case "centre": return {...polygonConfig(r,6+Math.floor(4*t)),timeLimitMs:Math.round(1700-700*t)};
     case "half": { const length=between(r,.32,.7); const start=between(r,.04,.96-length); return {lineStartX:start,lineEndX:start+length,timeLimitMs:Math.round(1400-500*t)}; }
     case "bigger": return {biggerSide:r()<.5?0:1,shapeKind:Math.floor(r()*3),sizeDifferencePct:Number((.08-.065*t).toFixed(3)),timeLimitMs:Math.round(650-150*t)};
-    case "memory-grid": { const grid=level<5?4:level<8?5:6; const length=Math.min(grid*grid-1,4+Math.floor(level*.8)); return {...memoryPattern(r,grid,length),showMs:Math.round(900-420*t),answerDeadlineMs:Math.round(4200-1600*t)}; }
+    case "memory-grid": { const grid=level<5?4:level<8?5:6; const length=Math.min(grid*grid-1,4+Math.floor(level*.8)); const gridBonusMs=grid===4?0:grid===5?1000:2000; return {...memoryPattern(r,grid,length),showMs:Math.round(900-420*t),answerDeadlineMs:Math.round(4200-1600*t)+gridBonusMs}; }
     case "count": { const min=6+Math.floor(level*.6),max=10+level; return {minCount:min,maxCount:max,actualCount:Math.floor(between(r,min,max+1)),showMs:Math.round(800-350*t),answerDeadlineMs:Math.round(2600-700*t)}; }
     case "dont-tap": return {...nopeSequence(r,8),responseWindowMs:Math.round(480-130*t),minDelayMs:180,maxDelayMs:Math.round(520-180*t)};
     case "trace": return {targetRadius:Number(between(r,.25,.34).toFixed(3)),accuracyThresholdPct:Math.round(91+6*t),timeLimitMs:Math.round(9500-3000*t)};
@@ -57,17 +57,29 @@ function configFor(slug:DailyGameSlug, level:number, r:()=>number):Record<string
 
 // Honest bootstrap thresholds. These are replaced by server-recorded practice
 // calibration when enough samples exist for the corresponding game/level.
+//
+// Loosened from the original guesses after real playtesting showed round 1
+// — supposedly the ~75%-survive round — was eliminating almost everyone on
+// day one. Two compounding causes, both fixed here: (1) weekBase below was
+// starting the WHOLE day at practice level 4-7 out of 10, never truly easy,
+// even on the gentlest day of the week; (2) these base values themselves
+// were picked closer to idealized/lab reaction times than real mixed-
+// population performance on a touchscreen. Loosened roughly 35-45% across
+// the board — still a guess, not real calibration data, but a deliberately
+// generous one given the alternative is people getting cut round 1 every
+// single day and never coming back.
 const BASE_CUTOFF:Record<DailyGameSlug,number>={
-  react:330, bigger:560, half:.075, centre:.09, stop:.18, exact:.20,
-  count:6000, "memory-grid":7000, "dont-tap":2500, trace:6500,
+  react:460, bigger:750, half:.115, centre:.13, stop:.25, exact:.28,
+  count:9000, "memory-grid":10500, "dont-tap":3600, trace:9500,
 };
 
 export function getBootstrapRoundsForDate(dailyDate:string):BootstrapRoundDefinition[]{
   const day=new Date(`${dailyDate}T12:00:00Z`).getUTCDay(); // Sunday 0 ... Saturday 6
   const r=rng(hashString(dailyDate));
-  // Sunday starts around practice level 4. Saturday starts around 7. Later
-  // rounds add up to three more levels, capped at 10.
-  const weekBase=4+Math.floor(day/2);
+  // Was 4+floor(day/2), meaning even Sunday's opening round started at
+  // practice level 4/10 — never actually easy. Now starts at level 1 on
+  // Sunday, still capped well below max by Saturday.
+  const weekBase=1+Math.floor(day/2);
   const order=shuffled(BASE_ORDER,r);
   return order.map((slug,index)=>{
     const roundNumber=index+1;
