@@ -335,6 +335,13 @@ export function DailyRunner() {
             PRACTICE
           </Link>
         </div>
+        {eliminated && (
+          <p style={{ marginTop: "1.25rem" }}>
+            <Link href="/levels" style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
+              Want something more forgiving? Try Levels →
+            </Link>
+          </p>
+        )}
         <ShareSheet
           open={shareOpen}
           onClose={() => setShareOpen(false)}
