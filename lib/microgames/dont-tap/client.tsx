@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { nowMs, randomBetween, RESULT_REVEAL_MS } from "@/lib/microgames/engine/timing";
 import { hapticResult } from "@/lib/microgames/engine/haptics";
+import { soundGood, soundBad } from "@/lib/microgames/engine/sound";
 import type { MicrogameConfig, MicrogameInputEvent, MicrogameResult } from "@/lib/microgames/engine/types";
 import { computeDontTapErrors, computeDontTapScore, isDontTapResultPlausible } from "./scorer";
 
@@ -107,7 +108,7 @@ export function DontTapGame({
     setErrors(errorCount);
     setScoreValue(score);
     setPhase("result");
-    hapticResult(plausible && errorCount === 0);
+    hapticResult(plausible && errorCount === 0); if (plausible && errorCount === 0) soundGood(); else soundBad();
 
     const performanceScore = Math.max(0, Math.round(1000 - errorCount * 150));
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { nowMs, RESULT_REVEAL_MS } from "@/lib/microgames/engine/timing";
 import { hapticResult } from "@/lib/microgames/engine/haptics";
+import { soundGood, soundBad } from "@/lib/microgames/engine/sound";
 import { ReadyCountdown } from "@/lib/microgames/engine/ReadyCountdown";
 import type { MicrogameConfig, MicrogameInputEvent, MicrogameResult } from "@/lib/microgames/engine/types";
 import { computeMemoryGridErrors, computeMemoryGridScore, isMemoryGridResultPlausible } from "./scorer";
@@ -77,7 +78,7 @@ export function MemoryGridGame({ config, onFinish }: { config: MicrogameConfig; 
 
       setErrors(err);
       setPhase("result");
-      hapticResult(plausible && err === 0);
+      hapticResult(plausible && err === 0); if (plausible && err === 0) soundGood(); else soundBad();
 
       resultTimerRef.current = setTimeout(
         () =>

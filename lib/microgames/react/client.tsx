@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { nowMs, randomBetween, RESULT_REVEAL_MS } from "@/lib/microgames/engine/timing";
 import { hapticResult } from "@/lib/microgames/engine/haptics";
+import { soundAnticipationBuildup, soundGo, soundGood, soundBad } from "@/lib/microgames/engine/sound";
 import type { MicrogameConfig, MicrogameInputEvent, MicrogameResult } from "@/lib/microgames/engine/types";
 import { computeReactScore, isReactResultPlausible } from "./scorer";
 
@@ -31,9 +32,11 @@ export function ReactGame({
     stimulusDelayRef.current = config.difficulty.stimulusDelayMs ?? randomBetween(minDelay, maxDelay);
     setPhase("waiting");
     setReactionMs(null);
+    soundAnticipationBuildup(stimulusDelayRef.current);
 
     timerRef.current = setTimeout(() => {
       setPhase("live");
+      soundGo();
     }, stimulusDelayRef.current);
   }, [config.difficulty.stimulusDelayMs, minDelay, maxDelay]);
 
@@ -52,6 +55,7 @@ export function ReactGame({
       if (timerRef.current) clearTimeout(timerRef.current);
       setPhase("false_start");
       hapticResult(false);
+      soundBad();
       const result: MicrogameResult = {
         rawScore: Number.POSITIVE_INFINITY,
         metricDirection: "lower_is_better",
@@ -77,6 +81,7 @@ export function ReactGame({
       setReactionMs(score);
       setPhase("result");
       hapticResult(plausible && score < 300);
+      if (plausible && score < 300) soundGood(); else soundBad();
 
       // Hold on the result screen for a beat so the player actually sees
       // their number before the practice summary takes over.

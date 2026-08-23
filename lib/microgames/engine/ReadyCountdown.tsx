@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { hapticTap } from "@/lib/microgames/engine/haptics";
+import { hapticAnticipationTick, hapticGo } from "@/lib/microgames/engine/haptics";
+import { soundAnticipationTick, soundGo } from "@/lib/microgames/engine/sound";
 
 export function ReadyCountdown({
   seconds = 3,
@@ -17,15 +18,21 @@ export function ReadyCountdown({
   const [count, setCount] = useState(seconds);
 
   useEffect(() => {
-    hapticTap();
+    hapticAnticipationTick();
+    soundAnticipationTick(0);
+    let step = 0;
     const interval = setInterval(() => {
       setCount((current) => {
         if (current <= 1) {
           clearInterval(interval);
+          hapticGo();
+          soundGo();
           window.setTimeout(onComplete, 160);
           return 0;
         }
-        hapticTap();
+        step += 1;
+        hapticAnticipationTick();
+        soundAnticipationTick(step);
         return current - 1;
       });
     }, 700);

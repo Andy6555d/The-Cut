@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { nowMs, RESULT_REVEAL_MS } from "@/lib/microgames/engine/timing";
 import { hapticResult } from "@/lib/microgames/engine/haptics";
+import { soundGood, soundBad } from "@/lib/microgames/engine/sound";
 import type { MicrogameConfig, MicrogameInputEvent, MicrogameResult } from "@/lib/microgames/engine/types";
 import { computeExactScore, isExactResultPlausible } from "./scorer";
 
@@ -69,7 +70,7 @@ export function ExactGame({
     setActualSeconds(actual);
     setErrorSeconds(score);
     setPhase("result");
-    hapticResult(plausible && score < 0.15);
+    hapticResult(plausible && score < 0.15); if (plausible && score < 0.15) soundGood(); else soundBad();
 
     resultTimerRef.current = setTimeout(() => {
       onFinish({

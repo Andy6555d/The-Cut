@@ -83,3 +83,45 @@ export function soundCut() {
   tone(150, 180, 70, "sawtooth", 0.03);
   tone(90, 250, 150, "sine", 0.045);
 }
+
+// --- Anticipation cues -----------------------------------------------
+// Everything above reacts to a result that already happened. These build
+// tension BEFORE the moment — the audio equivalent of the "WAIT FOR IT"
+// text most games already show, so the anticipation is felt as well as
+// read.
+
+/** A soft, low tick — used for each discrete countdown step (3…2…1). */
+export function soundAnticipationTick(stepIndex = 0) {
+  // Pitch creeps up each successive tick so the countdown feels like it's
+  // closing in, not just repeating the same sound three times.
+  tone(260 + stepIndex * 30, 55, 0, "sine", 0.03);
+}
+
+/** The bright, sharp release cue — the exact instant a stimulus appears
+ *  or a countdown resolves to GO. Deliberately higher and shorter than
+ *  every anticipation tick so it reads as the payoff, not another tick. */
+export function soundGo() {
+  tone(880, 70, 0, "sine", 0.05);
+}
+
+/**
+ * Schedules a rhythmic accelerating tick sequence across an upcoming wait
+ * of `totalDurationMs`, timed to land its final, brightest tick right as
+ * the wait ends — a heartbeat-quickening build rather than a flat drone.
+ * All ticks are scheduled up front on the Web Audio clock (not chained
+ * JS timeouts), so the rhythm stays precise regardless of main-thread
+ * jitter. Safe to call even if the actual reveal fires a little earlier
+ * or later than `totalDurationMs` — it's a mood cue, not a sync signal
+ * anything depends on.
+ */
+export function soundAnticipationBuildup(totalDurationMs: number) {
+  if (!soundEnabled() || totalDurationMs < 250) return;
+  // Accelerating intervals: starts slow, closes in fast near the end —
+  // an eased curve rather than evenly-spaced ticks.
+  const tickCount = Math.min(10, Math.max(3, Math.round(totalDurationMs / 260)));
+  for (let i = 0; i < tickCount; i++) {
+    const easedFraction = 1 - Math.pow(1 - (i + 1) / tickCount, 2); // ease-in
+    const delayMs = easedFraction * totalDurationMs * 0.92; // land just before the end, GO cue takes the final beat
+    tone(210 + i * 14, 40, delayMs, "sine", 0.018 + i * 0.002);
+  }
+}
