@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { RootClientEffects } from "./root-client-effects";
+import { HamburgerMenu } from "@/lib/microgames/engine/HamburgerMenu";
 
 const displayFont = Space_Grotesk({
   subsets: ["latin"],
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${displayFont.variable} ${monoFont.variable}`}>
       <body>
         <RootClientEffects />
+        <HamburgerMenu />
         {children}
       </body>
     </html>
