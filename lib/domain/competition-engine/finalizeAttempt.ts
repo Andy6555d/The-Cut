@@ -8,6 +8,9 @@ export interface FinalizeResult {
   estimatedPercentile: number | null;
   currentStreak: number;
   longestStreak: number;
+  freezesAvailable: number;
+  freezeConsumed: boolean;
+  freezeEarned: boolean;
   totalPlayersToday: number | null;
 }
 
@@ -15,7 +18,7 @@ async function getStreakState(playerId: string): Promise<{ existing: StreakState
   const supabase = getSupabaseServerClient();
   const { data } = await supabase
     .from("streaks")
-    .select("current_streak, longest_streak, last_played_date")
+    .select("current_streak, longest_streak, last_played_date, freezes_available")
     .eq("player_id", playerId)
     .maybeSingle();
 
@@ -24,6 +27,7 @@ async function getStreakState(playerId: string): Promise<{ existing: StreakState
       currentStreak: (data?.current_streak as number | undefined) ?? 0,
       longestStreak: (data?.longest_streak as number | undefined) ?? 0,
       lastPlayedDate: (data?.last_played_date as string | undefined) ?? null,
+      freezesAvailable: (data?.freezes_available as number | undefined) ?? 0,
     },
   };
 }
@@ -85,6 +89,9 @@ export async function finalizeAttempt(
       estimatedPercentile: existingEstimatedPercentile,
       currentStreak: streakState?.currentStreak ?? 0,
       longestStreak: streakState?.longestStreak ?? 0,
+      freezesAvailable: streakState?.freezesAvailable ?? 0,
+      freezeConsumed: false,
+      freezeEarned: false,
       totalPlayersToday,
     };
   }
@@ -132,6 +139,9 @@ export async function finalizeAttempt(
   // idempotent re-check above.
   let currentStreak = 0;
   let longestStreak = 0;
+  let freezesAvailable = 0;
+  let freezeConsumed = false;
+  let freezeEarned = false;
 
   if (playerId) {
     const { data: dailyRow } = await supabase.from("dailies").select("daily_date").eq("id", dailyId).single();
@@ -141,6 +151,9 @@ export async function finalizeAttempt(
     const updated = computeStreakUpdate(existing, dailyDate);
     currentStreak = updated.currentStreak;
     longestStreak = updated.longestStreak;
+    freezesAvailable = updated.freezesAvailable;
+    freezeConsumed = updated.freezeConsumed;
+    freezeEarned = updated.freezeEarned;
 
     await supabase.from("streaks").upsert(
       {
@@ -148,10 +161,21 @@ export async function finalizeAttempt(
         current_streak: updated.currentStreak,
         longest_streak: updated.longestStreak,
         last_played_date: updated.lastPlayedDate,
+        freezes_available: updated.freezesAvailable,
       },
       { onConflict: "player_id" }
     );
   }
 
-  return { roundsSurvived, eliminated, estimatedPercentile, currentStreak, longestStreak, totalPlayersToday };
+  return {
+    roundsSurvived,
+    eliminated,
+    estimatedPercentile,
+    currentStreak,
+    longestStreak,
+    freezesAvailable,
+    freezeConsumed,
+    freezeEarned,
+    totalPlayersToday,
+  };
 }

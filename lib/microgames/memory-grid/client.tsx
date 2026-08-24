@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { nowMs, RESULT_REVEAL_MS } from "@/lib/microgames/engine/timing";
-import { hapticResult } from "@/lib/microgames/engine/haptics";
-import { soundGood, soundBad } from "@/lib/microgames/engine/sound";
+import { hapticResult, hapticAnticipationTick } from "@/lib/microgames/engine/haptics";
+import { soundGood, soundBad, soundTap } from "@/lib/microgames/engine/sound";
 import { ReadyCountdown } from "@/lib/microgames/engine/ReadyCountdown";
 import type { MicrogameConfig, MicrogameInputEvent, MicrogameResult } from "@/lib/microgames/engine/types";
 import { computeMemoryGridErrors, computeMemoryGridScore, isMemoryGridResultPlausible } from "./scorer";
@@ -148,6 +148,9 @@ export function MemoryGridGame({ config, onFinish }: { config: MicrogameConfig; 
 
   function handleCellTap(cellIndex: number) {
     if (phase !== "input" || selectedRef.current.includes(cellIndex)) return;
+    // A tiny per-tap cue reinforcing the instant correct/wrong reveal above
+    // — deliberately lighter than the round-level result sound/haptic.
+    if (patternSet.has(cellIndex)) soundTap(); else hapticAnticipationTick();
     const next = [...selectedRef.current, cellIndex];
     selectedRef.current = next;
     setSelected(next);
@@ -175,8 +178,12 @@ export function MemoryGridGame({ config, onFinish }: { config: MicrogameConfig; 
         {Array.from({ length: cellCount }, (_, i) => i).map((cellIndex) => {
           const isLit = phase === "showing" && patternSet.has(cellIndex);
           const isSelected = phase !== "showing" && selected.includes(cellIndex);
-          const correct = phase === "result" && isSelected && patternSet.has(cellIndex);
-          const wrong = phase === "result" && isSelected && !patternSet.has(cellIndex);
+          // Correct/wrong now reveals the INSTANT you tap, not just at the
+          // end of the round — the same "green tile" micro-reward that
+          // makes each individual guess feel like a small win, not just
+          // the final outcome.
+          const correct = isSelected && patternSet.has(cellIndex);
+          const wrong = isSelected && !patternSet.has(cellIndex);
           return (
             <button
               key={cellIndex}
@@ -186,8 +193,8 @@ export function MemoryGridGame({ config, onFinish }: { config: MicrogameConfig; 
                 aspectRatio: "1",
                 borderRadius: "10px",
                 border: "1px solid rgba(245,245,247,.15)",
-                boxShadow: isLit ? "0 0 24px rgba(30,167,255,.45)" : "none",
-                background: correct ? "var(--survive)" : wrong ? "var(--cut)" : isLit || isSelected ? "#1ea7ff" : "rgba(245,245,247,.05)",
+                boxShadow: isLit ? "0 0 24px rgba(30,167,255,.45)" : correct ? "0 0 18px rgba(0,229,160,.4)" : "none",
+                background: correct ? "var(--survive)" : wrong ? "var(--cut)" : isLit ? "#1ea7ff" : "rgba(245,245,247,.05)",
                 transition: "all .16s ease",
               }}
             />

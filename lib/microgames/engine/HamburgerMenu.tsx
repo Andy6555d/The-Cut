@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HomeIcon, TargetIcon, BoltIcon, RanksIcon, LeaguesIcon, InfoIcon } from "./NavIcons";
 import { isSoundEnabled, setSoundEnabled, soundTap } from "./sound";
+import { PushToggle } from "./PushToggle";
 
 const LINKS: { href: string; label: string; icon: React.ReactNode }[] = [
   { href: "/", label: "Home", icon: <HomeIcon size={20} /> },
@@ -101,6 +102,7 @@ export function HamburgerMenu() {
               <span>{soundOn ? "🔊" : "🔇"}</span>
               <span>Sound {soundOn ? "on" : "off"}</span>
             </button>
+            <PushToggle />
           </nav>
         </div>
       )}

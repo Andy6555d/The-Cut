@@ -60,6 +60,7 @@ export function ShareSheet({ open, onClose, payload }: Props) {
         <div className="share-sheet-handle" />
         <p className="share-sheet-kicker">SHARE YOUR RESULT</p>
         <h2>{payload.game ? `${payload.game} · ${payload.score}` : payload.score}</h2>
+        {payload.grid && <p className="share-sheet-grid-preview">{payload.grid}</p>}
         {payload.detail && <p className="share-sheet-detail">{payload.detail}</p>}
         {payload.rank && <p className="share-sheet-rank">{payload.rank}</p>}
 

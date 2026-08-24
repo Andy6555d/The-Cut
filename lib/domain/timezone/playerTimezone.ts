@@ -35,6 +35,19 @@ export function dateKeyInTimeZone(date: Date, timeZone: string): string {
   return `${year}-${month}-${day}`;
 }
 
+export function hourInTimeZone(date: Date, timeZone: string): number {
+  const formatter = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "numeric",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(date);
+  const hour = parts.find((part) => part.type === "hour")?.value;
+  if (!hour) throw new Error(`Could not resolve local hour for timezone ${timeZone}`);
+  // Some locales render midnight as "24" with hour12:false — normalize.
+  return Number(hour) % 24;
+}
+
 export function getLocalPlayDate(req: NextRequest, now = new Date()): {
   timeZone: string;
   localDate: string;
