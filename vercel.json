@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/maintenance",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/streak-reminders",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/league-weekly-snapshot",
+      "schedule": "10 4 * * 1"
     }
   ]
 }
