@@ -372,3 +372,12 @@ body::before { content:""; position:fixed; inset:0; pointer-events:none; z-index
 .hamburger-link.active{color:var(--fg);background:rgba(255,255,255,.05)}
 .hamburger-link:active{background:rgba(255,255,255,.08)}
 .hamburger-sound-toggle{display:flex;align-items:center;gap:.7rem;margin-top:.75rem;padding:.9rem 1rem;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:var(--fg);font-size:.88rem;cursor:pointer}
+
+.share-sheet-grid-preview{font-size:1.4rem;letter-spacing:.15em;text-align:center;margin:.4rem 0;line-height:1.6}
+
+/* Persistent home-screen streak badge — visible every time you land on
+   the home screen, not just once right after playing. This omnipresence
+   is deliberate: a streak only becomes identity/status when it's always
+   in view, not glimpsed once a day. */
+.home-streak-badge{display:inline-flex;align-items:center;gap:.35rem;margin:.5rem auto 0;padding:.35rem .8rem;border-radius:999px;background:linear-gradient(100deg,rgba(255,140,20,.14),rgba(255,60,60,.1));border:1px solid rgba(255,150,40,.28);color:#ffb347;font-size:.78rem;width:fit-content}
+.home-streak-badge strong{color:#fff;font-family:var(--font-mono)}

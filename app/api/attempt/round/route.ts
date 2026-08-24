@@ -183,6 +183,9 @@ export async function POST(req: NextRequest) {
       estimatedPercentile: finalized.estimatedPercentile,
       currentStreak: finalized.currentStreak,
       longestStreak: finalized.longestStreak,
+      freezesAvailable: finalized.freezesAvailable,
+      freezeConsumed: finalized.freezeConsumed,
+      freezeEarned: finalized.freezeEarned,
       totalPlayersToday: finalized.totalPlayersToday,
     });
   }

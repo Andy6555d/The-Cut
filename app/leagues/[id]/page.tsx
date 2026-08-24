@@ -11,11 +11,25 @@ interface LeagueInfo {
   memberCount: number;
 }
 
-interface LeagueEntry {
-  leagueRank: number;
-  roundsSurvived: number;
-  finalPercentile: number;
+interface WeeklyEntry {
+  playerId: string;
   handle: string;
+  roundsSurvivedTotal: number;
+  dailiesPlayed: number;
+  rank: number;
+}
+
+interface HistoryWeek {
+  weekStart: string;
+  entries: WeeklyEntry[];
+}
+
+function formatWeekLabel(weekStart: string): string {
+  const start = new Date(weekStart + "T00:00:00Z");
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 6);
+  const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
+  return `${fmt(start)} – ${fmt(end)}`;
 }
 
 export default function LeagueDetailPage() {
@@ -23,8 +37,9 @@ export default function LeagueDetailPage() {
   const id = params?.id as string;
 
   const [league, setLeague] = useState<LeagueInfo | null>(null);
-  const [entries, setEntries] = useState<LeagueEntry[]>([]);
-  const [dailyDate, setDailyDate] = useState<string | null>(null);
+  const [current, setCurrent] = useState<WeeklyEntry[]>([]);
+  const [history, setHistory] = useState<HistoryWeek[]>([]);
+  const [weekStart, setWeekStart] = useState<string | null>(null);
   const [state, setState] = useState<"loading" | "empty" | "ready" | "error">("loading");
   const [shareState, setShareState] = useState<"idle" | "copied">("idle");
 
@@ -36,16 +51,17 @@ export default function LeagueDetailPage() {
         if (!data.error) setLeague(data);
       });
 
-    fetch(`/api/leagues/${id}/leaderboard`)
+    fetch(`/api/leagues/${id}/weekly`)
       .then((r) => r.json())
       .then((data) => {
         if (data.status !== "ok") {
           setState("empty");
           return;
         }
-        setEntries(data.entries ?? []);
-        setDailyDate(data.dailyDate ?? null);
-        setState((data.entries ?? []).length === 0 ? "empty" : "ready");
+        setCurrent(data.current ?? []);
+        setHistory(data.history ?? []);
+        setWeekStart(data.weekStart ?? null);
+        setState((data.current ?? []).length === 0 && (data.history ?? []).length === 0 ? "empty" : "ready");
       })
       .catch(() => setState("error"));
   }, [id]);
@@ -97,8 +113,6 @@ export default function LeagueDetailPage() {
         </div>
       )}
 
-      {dailyDate && <p className="ranked-date" style={{ margin: "0 0 0.75rem" }}>{dailyDate}</p>}
-
       {state === "loading" && (
         <div className="ranked-skeleton">
           <div className="ranked-skeleton-row" />
@@ -119,17 +133,54 @@ export default function LeagueDetailPage() {
       )}
 
       {state === "ready" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          {entries.map((entry) => (
-            <div key={entry.leagueRank + entry.handle} className={`ranked-row ${entry.leagueRank === 1 ? "ranked-row-first" : ""}`}>
-              <span style={{ display: "flex", alignItems: "center", gap: "0.85rem", minWidth: 0 }}>
-                <span className="ranked-rank">#{entry.leagueRank}</span>
-                <span className="ranked-handle">{entry.handle}</span>
-              </span>
-              <span className="ranked-meta">{entry.roundsSurvived} rounds</span>
+        <>
+          <p className="league-panel-label" style={{ marginTop: "0.5rem" }}>
+            THIS WEEK{weekStart ? ` · ${formatWeekLabel(weekStart)}` : ""}
+          </p>
+
+          {current.length === 0 ? (
+            <div className="ranked-empty" style={{ margin: "0.5rem 0 1.5rem" }}>
+              <p>Nobody's played a Daily yet this week — standings reset every Monday.</p>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.5rem" }}>
+              {current.map((entry) => (
+                <div key={entry.playerId} className={`ranked-row ${entry.rank === 1 ? "ranked-row-first" : ""}`}>
+                  <span style={{ display: "flex", alignItems: "center", gap: "0.85rem", minWidth: 0 }}>
+                    <span className="ranked-rank">#{entry.rank}</span>
+                    <span className="ranked-handle">{entry.handle}</span>
+                  </span>
+                  <span className="ranked-meta">
+                    {entry.roundsSurvivedTotal} rounds · {entry.dailiesPlayed} Daily{entry.dailiesPlayed === 1 ? "" : "s"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {history.length > 0 && (
+            <>
+              <p className="league-panel-label">RECENT WEEKS</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                {history.map((week) => {
+                  const winner = week.entries[0];
+                  return (
+                    <div key={week.weekStart} className="league-panel" style={{ marginBottom: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <span style={{ color: "var(--muted)", fontSize: "0.78rem" }}>{formatWeekLabel(week.weekStart)}</span>
+                        {winner && (
+                          <span style={{ color: "var(--warn)", fontSize: "0.85rem" }}>
+                            🏆 {winner.handle}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </>
       )}
 
       <div className="ranked-cta-row">

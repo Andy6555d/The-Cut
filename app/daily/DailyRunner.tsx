@@ -22,6 +22,7 @@ import { withPlayerTimeZone } from "@/lib/domain/timezone/browserTimezone";
 import { localWeeklyPressure } from "@/lib/domain/daily-generation/weeklyPressure";
 import type { MicrogameConfig, MicrogameResult } from "@/lib/microgames/engine/types";
 import { ShareSheet } from "@/lib/share/ShareSheet";
+import { buildShareGrid } from "@/lib/share/shareResult";
 import { GAME_DISPLAY_NAMES, getGameInstruction } from "@/lib/microgames/engine/gameInstructions";
 
 interface RoundInfo {
@@ -77,6 +78,9 @@ export function DailyRunner() {
   const [roundsSurvived, setRoundsSurvived] = useState(0);
   const [estimatedPercentile, setEstimatedPercentile] = useState<number | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [freezesAvailable, setFreezesAvailable] = useState(0);
+  const [freezeConsumed, setFreezeConsumed] = useState(false);
+  const [freezeEarned, setFreezeEarned] = useState(false);
   const [totalPlayersToday, setTotalPlayersToday] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
@@ -95,6 +99,9 @@ export function DailyRunner() {
     setRoundsSurvived(Number(data.roundsSurvived ?? 0));
     setEstimatedPercentile((data.estimatedPercentile as number | null | undefined) ?? null);
     setCurrentStreak(Number(data.currentStreak ?? 0));
+    setFreezesAvailable(Number(data.freezesAvailable ?? 0));
+    setFreezeConsumed(!!data.freezeConsumed);
+    setFreezeEarned(!!data.freezeEarned);
     setTotalPlayersToday((data.totalPlayersToday as number | null | undefined) ?? null);
   }
 
@@ -324,7 +331,24 @@ export function DailyRunner() {
         )}
 
         {currentStreak > 0 && (
-          <p style={{ color: "var(--fg)", marginTop: "1rem" }}>🔥 {currentStreak} day streak</p>
+          <div style={{ marginTop: "1rem", textAlign: "center" }}>
+            <p style={{ color: "var(--fg)" }}>
+              🔥 {currentStreak} day streak
+              {freezesAvailable > 0 && (
+                <span style={{ color: "var(--muted)", fontSize: "0.8rem" }}> · ❄️ {freezesAvailable} freeze{freezesAvailable === 1 ? "" : "s"} ready</span>
+              )}
+            </p>
+            {freezeConsumed && (
+              <p className="new-best-badge" style={{ color: "#1ea7ff", fontSize: "0.85rem", marginTop: "0.3rem" }}>
+                ❄️ A freeze covered yesterday — streak saved
+              </p>
+            )}
+            {freezeEarned && !freezeConsumed && (
+              <p className="new-best-badge" style={{ color: "var(--warn)", fontSize: "0.85rem", marginTop: "0.3rem" }}>
+                ❄️ NEW FREEZE EARNED
+              </p>
+            )}
+          </div>
         )}
 
         <div style={{ display: "flex", gap: "1rem", marginTop: "2rem", flexWrap: "wrap", justifyContent: "center" }}>
@@ -352,6 +376,7 @@ export function DailyRunner() {
             detail: estimatedPercentile !== null ? `Currently about top ${Math.round(estimatedPercentile * 100)}% today` : undefined,
             rank: currentStreak > 0 ? `${currentStreak} day streak` : undefined,
             cta: "You get one shot today. Beat me.",
+            grid: buildShareGrid(roundsSurvived, totalRounds, eliminated),
           }}
         />
       </CenteredMessage>
